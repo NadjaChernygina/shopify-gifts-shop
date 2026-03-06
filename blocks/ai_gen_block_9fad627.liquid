@@ -1,0 +1,628 @@
+{% doc %}
+  @prompt
+    our purtners block, gallery with logos, gallery should smooth autoplay
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-partners-gallery-{{ ai_gen_id }} {
+    display: block;
+    width: {{ block.settings.desktop_width_percent }}%;
+    max-width: 100%;
+    padding: {{ block.settings.section_padding }}px 0;
+    background-color: {{ block.settings.background_color }};
+    overflow: hidden;
+  }
+
+  .ai-partners-gallery__header-{{ ai_gen_id }} {
+    text-align: {{ block.settings.text_alignment }};
+    margin-bottom: {{ block.settings.spacing_below_heading }}px;
+    padding: 0 20px;
+  }
+
+  .ai-partners-gallery__heading-{{ ai_gen_id }} {
+    margin: 0 0 10px;
+    color: {{ block.settings.heading_color }};
+    font-size: {{ block.settings.heading_size }}px;
+  }
+
+  .ai-partners-gallery__subheading-{{ ai_gen_id }} {
+    margin: 0;
+    color: {{ block.settings.subheading_color }};
+    font-size: {{ block.settings.subheading_size }}px;
+  }
+
+  .ai-partners-gallery__track-wrapper-{{ ai_gen_id }} {
+    position: relative;
+    width: 100%;
+  }
+
+  .ai-partners-gallery__track-{{ ai_gen_id }} {
+    display: flex;
+    gap: {{ block.settings.logo_spacing }}px;
+    will-change: transform;
+  }
+
+  .ai-partners-gallery__logo-{{ ai_gen_id }} {
+    flex-shrink: 0;
+    width: {{ block.settings.logo_width }}px;
+    height: {{ block.settings.logo_height }}px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: {{ block.settings.logo_background_color }};
+    border-radius: {{ block.settings.logo_border_radius }}px;
+    padding: {{ block.settings.logo_padding }}px;
+    {% if block.settings.logo_border_thickness > 0 %}
+      border: {{ block.settings.logo_border_thickness }}px solid {{ block.settings.logo_border_color }};
+    {% endif %}
+  }
+
+  .ai-partners-gallery__logo-{{ ai_gen_id }} img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    {% if block.settings.logo_grayscale %}
+      filter: grayscale(100%);
+      opacity: {{ block.settings.logo_opacity | divided_by: 100.0 }};
+      transition: filter 0.3s ease, opacity 0.3s ease;
+    {% else %}
+      opacity: {{ block.settings.logo_opacity | divided_by: 100.0 }};
+    {% endif %}
+  }
+
+  {% if block.settings.logo_grayscale %}
+    .ai-partners-gallery__logo-{{ ai_gen_id }}:hover img {
+      filter: grayscale(0%);
+      opacity: 1;
+    }
+  {% endif %}
+
+  .ai-partners-gallery__logo-placeholder-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f4f4f4;
+    border-radius: {{ block.settings.logo_border_radius }}px;
+  }
+
+  .ai-partners-gallery__logo-placeholder-{{ ai_gen_id }} svg {
+    width: 60%;
+    height: 60%;
+    opacity: 0.3;
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-partners-gallery__logo-{{ ai_gen_id }} {
+      width: {{ block.settings.logo_width | times: 0.7 }}px;
+      height: {{ block.settings.logo_height | times: 0.7 }}px;
+    }
+  }
+{% endstyle %}
+
+<partners-gallery-{{ ai_gen_id }}
+  class="ai-partners-gallery-{{ ai_gen_id }}"
+  data-speed="{{ block.settings.scroll_speed }}"
+  {{ block.shopify_attributes }}
+>
+  {% if block.settings.heading != blank or block.settings.subheading != blank %}
+    <div class="ai-partners-gallery__header-{{ ai_gen_id }}">
+      {% if block.settings.heading != blank %}
+        <h2 class="ai-partners-gallery__heading-{{ ai_gen_id }}">{{ block.settings.heading }}</h2>
+      {% endif %}
+      {% if block.settings.subheading != blank %}
+        <p class="ai-partners-gallery__subheading-{{ ai_gen_id }}">{{ block.settings.subheading }}</p>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="ai-partners-gallery__track-wrapper-{{ ai_gen_id }}">
+    <div class="ai-partners-gallery__track-{{ ai_gen_id }}">
+      {% for i in (1..12) %}
+        {% liquid
+          assign logo_key = 'logo_' | append: i
+          assign logo = block.settings[logo_key]
+          assign url_key = 'logo_' | append: i | append: '_url'
+          assign url = block.settings[url_key]
+        %}
+
+        {% if logo != blank %}
+          <div class="ai-partners-gallery__logo-{{ ai_gen_id }}">
+            {% if url != blank %}
+              <a href="{{ url }}" target="_blank" rel="noopener">
+                <img
+                  src="{{ logo | image_url: width: 400 }}"
+                  alt="{{ logo.alt | escape }}"
+                  loading="lazy"
+                  width="{{ block.settings.logo_width }}"
+                  height="{{ block.settings.logo_height }}"
+                >
+              </a>
+            {% else %}
+              <img
+                src="{{ logo | image_url: width: 400 }}"
+                alt="{{ logo.alt | escape }}"
+                loading="lazy"
+                width="{{ block.settings.logo_width }}"
+                height="{{ block.settings.logo_height }}"
+              >
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</partners-gallery-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class PartnersGallery{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.track = this.querySelector('.ai-partners-gallery__track-{{ ai_gen_id }}');
+        this.speed = parseFloat(this.dataset.speed) || 30;
+        this.animationId = null;
+        this.position = 0;
+      }
+
+      connectedCallback() {
+        if (!this.track) return;
+
+        const logos = Array.from(this.track.children);
+        if (logos.length === 0) return;
+
+        this.duplicateLogos();
+        this.startAnimation();
+
+        this.track.addEventListener('mouseenter', () => this.pauseAnimation());
+        this.track.addEventListener('mouseleave', () => this.startAnimation());
+      }
+
+      duplicateLogos() {
+        const logos = Array.from(this.track.children);
+        const clones = logos.map(logo => logo.cloneNode(true));
+        clones.forEach(clone => this.track.appendChild(clone));
+
+        const secondClones = logos.map(logo => logo.cloneNode(true));
+        secondClones.forEach(clone => this.track.appendChild(clone));
+      }
+
+      startAnimation() {
+        if (this.animationId) return;
+
+        const logos = Array.from(this.track.children);
+        if (logos.length === 0) return;
+
+        const firstLogoWidth = logos[0].offsetWidth;
+        const gap = parseInt(getComputedStyle(this.track).gap) || 0;
+        const totalWidth = firstLogoWidth + gap;
+        const originalLogosCount = logos.length / 3;
+        const resetPoint = totalWidth * originalLogosCount;
+
+        const animate = () => {
+          this.position += this.speed / 60;
+
+          if (this.position >= resetPoint) {
+            this.position = 0;
+          }
+
+          this.track.style.transform = `translateX(-${this.position}px)`;
+          this.animationId = requestAnimationFrame(animate);
+        };
+
+        this.animationId = requestAnimationFrame(animate);
+      }
+
+      pauseAnimation() {
+        if (this.animationId) {
+          cancelAnimationFrame(this.animationId);
+          this.animationId = null;
+        }
+      }
+
+      disconnectedCallback() {
+        this.pauseAnimation();
+      }
+    }
+
+    customElements.define('partners-gallery-{{ ai_gen_id }}', PartnersGallery{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Partners gallery",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Our partners"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Trusted by leading brands worldwide"
+    },
+    {
+      "type": "select",
+      "id": "text_alignment",
+      "label": "Text alignment",
+      "options": [
+        {
+          "value": "left",
+          "label": "Left"
+        },
+        {
+          "value": "center",
+          "label": "Center"
+        },
+        {
+          "value": "right",
+          "label": "Right"
+        }
+      ],
+      "default": "center"
+    },
+    {
+      "type": "range",
+      "id": "spacing_below_heading",
+      "label": "Spacing below heading",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "header",
+      "content": "Animation"
+    },
+    {
+      "type": "range",
+      "id": "scroll_speed",
+      "label": "Scroll speed",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 30
+    },
+    {
+      "type": "header",
+      "content": "Logo 1"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_1",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_1_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 2"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_2",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_2_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 3"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_3",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_3_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 4"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_4",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_4_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 5"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_5",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_5_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 6"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_6",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_6_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 7"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_7",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_7_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 8"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_8",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_8_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 9"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_9",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_9_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 10"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_10",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_10_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 11"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_11",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_11_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo 12"
+    },
+    {
+      "type": "image_picker",
+      "id": "logo_12",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "logo_12_url",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Logo style"
+    },
+    {
+      "type": "range",
+      "id": "logo_width",
+      "label": "Width",
+      "min": 80,
+      "max": 300,
+      "step": 10,
+      "unit": "px",
+      "default": 150
+    },
+    {
+      "type": "range",
+      "id": "logo_height",
+      "label": "Height",
+      "min": 40,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "logo_spacing",
+      "label": "Spacing between logos",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 40
+    },
+    {
+      "type": "range",
+      "id": "logo_padding",
+      "label": "Padding",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 20
+    },
+    {
+      "type": "range",
+      "id": "logo_border_radius",
+      "label": "Border radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "logo_border_thickness",
+      "label": "Border thickness",
+      "min": 0,
+      "max": 10,
+      "step": 1,
+      "unit": "px",
+      "default": 1
+    },
+    {
+      "type": "color",
+      "id": "logo_border_color",
+      "label": "Border color",
+      "default": "#e0e0e0"
+    },
+    {
+      "type": "color",
+      "id": "logo_background_color",
+      "label": "Background color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "checkbox",
+      "id": "logo_grayscale",
+      "label": "Grayscale effect",
+      "default": true
+    },
+    {
+      "type": "range",
+      "id": "logo_opacity",
+      "label": "Opacity",
+      "min": 10,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 70
+    },
+    {
+      "type": "header",
+      "content": "Section style"
+    },
+    {
+      "type": "range",
+      "id": "desktop_width_percent",
+      "label": "Desktop width",
+      "min": 50,
+      "max": 100,
+      "step": 5,
+      "unit": "%",
+      "default": 100
+    },
+    {
+      "type": "range",
+      "id": "section_padding",
+      "label": "Vertical padding",
+      "min": 0,
+      "max": 100,
+      "step": 5,
+      "unit": "px",
+      "default": 50
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#f9f9f9"
+    },
+    {
+      "type": "color",
+      "id": "heading_color",
+      "label": "Heading color",
+      "default": "#121212"
+    },
+    {
+      "type": "range",
+      "id": "heading_size",
+      "label": "Heading size",
+      "min": 16,
+      "max": 60,
+      "step": 2,
+      "unit": "px",
+      "default": 32
+    },
+    {
+      "type": "color",
+      "id": "subheading_color",
+      "label": "Subheading color",
+      "default": "#666666"
+    },
+    {
+      "type": "range",
+      "id": "subheading_size",
+      "label": "Subheading size",
+      "min": 12,
+      "max": 30,
+      "step": 1,
+      "unit": "px",
+      "default": 16
+    }
+  ],
+  "presets": [
+    {
+      "name": "Partners gallery"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,665 @@
+{% doc %}
+  @prompt
+    Create a new homepage section for Shopify Dawn called “For the moment”.
+    
+    Goal:
+    A premium, editorial “mood selector” block under the hero. Not a product grid. It should feel like a high-end brand experience for glassware.
+    
+    Layout:
+    - Full-width section with page-width container.
+    - Large centered heading: “For the moment”.
+    - Under the heading: three BIG word-buttons in one row on desktop, stacked on mobile:
+      1) DINNER
+      2) COCKTAIL
+      3) CELEBRATION
+    - Minimal, lots of whitespace.
+    
+    Interaction:
+    - On hover (desktop) or tap/click (mobile), the section background changes smoothly (crossfade).
+    - At the same time, a relevant glass image appears / is highlighted (fade in) near the center/right (or behind text as a subtle overlay).
+      - DINNER shows a wine glass image
+      - COCKTAIL shows a coupe/cocktail glass image
+      - CELEBRATION shows a champagne flute image
+    - Keep text readable on any background: use subtle overlay / gradient if needed.
+    - Add a small caption under buttons: “Choose a moment”.
+    
+    Behavior requirements:
+    - No external libraries.
+    - Use minimal vanilla JS (only to switch active state on click/tap; hover can be CSS if possible).
+    - Must be accessible: buttons are <button> elements, keyboard focus visible, aria-pressed for active state.
+    
+    Theme editor settings:
+    - Heading text (default “For the moment”)
+    - 3 labels (default DINNER / COCKTAIL / CELEBRATION)
+    - 3 background images OR background colors (one per mood)
+    - 3 glass images (one per mood, PNG/WebP)
+    - Optional links for each mood (e.g., link to a collection)
+    - Color scheme selector
+    - Padding top/bottom
+    - Option: “Default active mood” (1/2/3)
+    
+    Implementation:
+    - Output a single Liquid section file with schema + markup.
+    - Add a dedicated CSS asset file (e.g., section-for-the-moment.css) and include it with stylesheet_tag.
+    - Add a small JS file or inline script in the section that toggles active mood on click/tap and updates data attributes (e.g., data-active="dinner|cocktail|celebration").
+    
+    Styling:
+    - Editorial, premium, minimal.
+    - Big typography for the three words (uppercase, letter-spacing).
+    - Smooth transitions 250–400ms.
+    - Mobile: buttons stacked, images smaller, no overflow.
+{% enddoc %}
+
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .for-the-moment-{{ ai_gen_id }} {
+    display: block;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    padding-top: {{ block.settings.padding_top }}px;
+    padding-bottom: {{ block.settings.padding_bottom }}px;
+    background-color: rgb(var(--color-background));
+    color: rgb(var(--color-foreground));
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__bg-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 400ms ease;
+    background-size: cover;
+    background-position: center;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__bg-layer.active {
+    opacity: 1;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(to bottom, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3));
+    z-index: 1;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__container {
+    position: relative;
+    z-index: 2;
+    max-width: {{ settings.page_width }}px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 60px;
+    min-height: 500px;
+    justify-content: center;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__heading {
+    font-family: var(--font-heading-family);
+    font-size: clamp(40px, 5vw, 72px);
+    font-weight: 400;
+    letter-spacing: 0.02em;
+    margin: 0;
+    text-align: center;
+    color: #ffffff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__moods {
+    display: flex;
+    gap: 40px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__mood-button {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--font-heading-family);
+    font-size: clamp(28px, 3.5vw, 48px);
+    font-weight: 300;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.6);
+    transition: all 300ms ease;
+    position: relative;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__mood-button:hover,
+  .for-the-moment-{{ ai_gen_id }}__mood-button:focus-visible {
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__mood-button:focus-visible {
+    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline-offset: 8px;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__mood-button.active {
+    color: #ffffff;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__mood-button::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%) scaleX(0);
+    width: 60%;
+    height: 1px;
+    background-color: #ffffff;
+    transition: transform 300ms ease;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__mood-button.active::after {
+    transform: translateX(-50%) scaleX(1);
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__glass-images {
+    position: absolute;
+    right: 10%;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 300px;
+    height: 400px;
+    z-index: 1;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__glass-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 400ms ease;
+    pointer-events: none;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__glass-image.active {
+    opacity: 1;
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__glass-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
+  }
+
+  .for-the-moment-{{ ai_gen_id }}__caption {
+    font-family: var(--font-body-family);
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    margin-top: 20px;
+  }
+
+  @media screen and (max-width: 989px) {
+    .for-the-moment-{{ ai_gen_id }}__content {
+      gap: 40px;
+      min-height: 400px;
+    }
+
+    .for-the-moment-{{ ai_gen_id }}__moods {
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .for-the-moment-{{ ai_gen_id }}__glass-images {
+      right: 5%;
+      width: 200px;
+      height: 280px;
+    }
+
+    .for-the-moment-{{ ai_gen_id }}__mood-button {
+      font-size: clamp(24px, 6vw, 36px);
+    }
+  }
+
+  @media screen and (max-width: 749px) {
+    .for-the-moment-{{ ai_gen_id }}__content {
+      min-height: 350px;
+    }
+
+    .for-the-moment-{{ ai_gen_id }}__glass-images {
+      position: relative;
+      right: auto;
+      top: auto;
+      transform: none;
+      width: 180px;
+      height: 240px;
+      margin: 0 auto;
+    }
+  }
+{% endstyle %}
+
+<for-the-moment-{{ ai_gen_id }}
+  class="for-the-moment-{{ ai_gen_id }} color-{{ block.settings.color_scheme }}"
+  data-default-mood="{{ block.settings.default_mood }}"
+  {{ block.shopify_attributes }}
+>
+  <div class="for-the-moment-{{ ai_gen_id }}__background">
+    {% if block.settings.mood_1_bg_image %}
+      <div
+        class="for-the-moment-{{ ai_gen_id }}__bg-layer"
+        data-mood="dinner"
+        style="background-image: url('{{ block.settings.mood_1_bg_image | image_url: width: 2000 }}');"
+      ></div>
+    {% else %}
+      <div
+        class="for-the-moment-{{ ai_gen_id }}__bg-layer"
+        data-mood="dinner"
+        style="background-color: {{ block.settings.mood_1_bg_color }};"
+      ></div>
+    {% endif %}
+
+    {% if block.settings.mood_2_bg_image %}
+      <div
+        class="for-the-moment-{{ ai_gen_id }}__bg-layer"
+        data-mood="cocktail"
+        style="background-image: url('{{ block.settings.mood_2_bg_image | image_url: width: 2000 }}');"
+      ></div>
+    {% else %}
+      <div
+        class="for-the-moment-{{ ai_gen_id }}__bg-layer"
+        data-mood="cocktail"
+        style="background-color: {{ block.settings.mood_2_bg_color }};"
+      ></div>
+    {% endif %}
+
+    {% if block.settings.mood_3_bg_image %}
+      <div
+        class="for-the-moment-{{ ai_gen_id }}__bg-layer"
+        data-mood="celebration"
+        style="background-image: url('{{ block.settings.mood_3_bg_image | image_url: width: 2000 }}');"
+      ></div>
+    {% else %}
+      <div
+        class="for-the-moment-{{ ai_gen_id }}__bg-layer"
+        data-mood="celebration"
+        style="background-color: {{ block.settings.mood_3_bg_color }};"
+      ></div>
+    {% endif %}
+
+    <div class="for-the-moment-{{ ai_gen_id }}__bg-overlay"></div>
+  </div>
+
+  <div class="for-the-moment-{{ ai_gen_id }}__container">
+    <div class="for-the-moment-{{ ai_gen_id }}__content">
+      <h2 class="for-the-moment-{{ ai_gen_id }}__heading">
+        {{ block.settings.heading }}
+      </h2>
+
+      <div class="for-the-moment-{{ ai_gen_id }}__glass-images">
+        {% if block.settings.mood_1_glass_image %}
+          <div class="for-the-moment-{{ ai_gen_id }}__glass-image" data-mood="dinner">
+            <img
+              src="{{ block.settings.mood_1_glass_image | image_url: width: 600 }}"
+              alt="{{ block.settings.mood_1_label }}"
+              loading="lazy"
+              width="300"
+              height="400"
+            >
+          </div>
+        {% endif %}
+
+        {% if block.settings.mood_2_glass_image %}
+          <div class="for-the-moment-{{ ai_gen_id }}__glass-image" data-mood="cocktail">
+            <img
+              src="{{ block.settings.mood_2_glass_image | image_url: width: 600 }}"
+              alt="{{ block.settings.mood_2_label }}"
+              loading="lazy"
+              width="300"
+              height="400"
+            >
+          </div>
+        {% endif %}
+
+        {% if block.settings.mood_3_glass_image %}
+          <div class="for-the-moment-{{ ai_gen_id }}__glass-image" data-mood="celebration">
+            <img
+              src="{{ block.settings.mood_3_glass_image | image_url: width: 600 }}"
+              alt="{{ block.settings.mood_3_label }}"
+              loading="lazy"
+              width="300"
+              height="400"
+            >
+          </div>
+        {% endif %}
+      </div>
+
+      <div class="for-the-moment-{{ ai_gen_id }}__moods" role="group" aria-label="Mood selector">
+        {% if block.settings.mood_1_link != blank %}
+          <a
+            href="{{ block.settings.mood_1_link }}"
+            class="for-the-moment-{{ ai_gen_id }}__mood-button"
+            data-mood="dinner"
+            aria-pressed="false"
+            role="button"
+          >
+            {{ block.settings.mood_1_label }}
+          </a>
+        {% else %}
+          <button
+            class="for-the-moment-{{ ai_gen_id }}__mood-button"
+            data-mood="dinner"
+            aria-pressed="false"
+            type="button"
+          >
+            {{ block.settings.mood_1_label }}
+          </button>
+        {% endif %}
+
+        {% if block.settings.mood_2_link != blank %}
+          <a
+            href="{{ block.settings.mood_2_link }}"
+            class="for-the-moment-{{ ai_gen_id }}__mood-button"
+            data-mood="cocktail"
+            aria-pressed="false"
+            role="button"
+          >
+            {{ block.settings.mood_2_label }}
+          </a>
+        {% else %}
+          <button
+            class="for-the-moment-{{ ai_gen_id }}__mood-button"
+            data-mood="cocktail"
+            aria-pressed="false"
+            type="button"
+          >
+            {{ block.settings.mood_2_label }}
+          </button>
+        {% endif %}
+
+        {% if block.settings.mood_3_link != blank %}
+          <a
+            href="{{ block.settings.mood_3_link }}"
+            class="for-the-moment-{{ ai_gen_id }}__mood-button"
+            data-mood="celebration"
+            aria-pressed="false"
+            role="button"
+          >
+            {{ block.settings.mood_3_label }}
+          </a>
+        {% else %}
+          <button
+            class="for-the-moment-{{ ai_gen_id }}__mood-button"
+            data-mood="celebration"
+            aria-pressed="false"
+            type="button"
+          >
+            {{ block.settings.mood_3_label }}
+          </button>
+        {% endif %}
+      </div>
+
+      {% if block.settings.caption != blank %}
+        <p class="for-the-moment-{{ ai_gen_id }}__caption">{{ block.settings.caption }}</p>
+      {% endif %}
+    </div>
+  </div>
+</for-the-moment-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class ForTheMoment{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+        this.currentMood = null;
+      }
+
+      connectedCallback() {
+        this.moodButtons = this.querySelectorAll('.for-the-moment-{{ ai_gen_id }}__mood-button');
+        this.bgLayers = this.querySelectorAll('.for-the-moment-{{ ai_gen_id }}__bg-layer');
+        this.glassImages = this.querySelectorAll('.for-the-moment-{{ ai_gen_id }}__glass-image');
+        this.defaultMood = this.dataset.defaultMood || 'dinner';
+
+        this.setupEventListeners();
+        this.setActiveMood(this.defaultMood);
+      }
+
+      setupEventListeners() {
+        this.moodButtons.forEach((button) => {
+          button.addEventListener('click', (e) => {
+            const mood = button.dataset.mood;
+            if (button.tagName === 'BUTTON') {
+              e.preventDefault();
+            }
+            this.setActiveMood(mood);
+          });
+
+          button.addEventListener('mouseenter', () => {
+            if (window.innerWidth >= 990) {
+              const mood = button.dataset.mood;
+              this.setActiveMood(mood);
+            }
+          });
+        });
+      }
+
+      setActiveMood(mood) {
+        if (this.currentMood === mood) return;
+        this.currentMood = mood;
+
+        this.moodButtons.forEach((btn) => {
+          const isActive = btn.dataset.mood === mood;
+          btn.classList.toggle('active', isActive);
+          btn.setAttribute('aria-pressed', isActive.toString());
+        });
+
+        this.bgLayers.forEach((layer) => {
+          layer.classList.toggle('active', layer.dataset.mood === mood);
+        });
+
+        this.glassImages.forEach((image) => {
+          image.classList.toggle('active', image.dataset.mood === mood);
+        });
+      }
+    }
+
+    customElements.define('for-the-moment-{{ ai_gen_id }}', ForTheMoment{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "For the moment",
+  "tag": null,
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Heading",
+      "default": "For the moment"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "caption",
+      "label": "Caption",
+      "default": "Choose a moment"
+    },
+    {
+      "type": "select",
+      "id": "default_mood",
+      "label": "Default active mood",
+      "options": [
+        {
+          "value": "dinner",
+          "label": "Dinner"
+        },
+        {
+          "value": "cocktail",
+          "label": "Cocktail"
+        },
+        {
+          "value": "celebration",
+          "label": "Celebration"
+        }
+      ],
+      "default": "dinner"
+    },
+    {
+      "type": "header",
+      "content": "Mood 1: Dinner"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "mood_1_label",
+      "label": "Label",
+      "default": "DINNER"
+    },
+    {
+      "type": "url",
+      "id": "mood_1_link",
+      "label": "Link"
+    },
+    {
+      "type": "image_picker",
+      "id": "mood_1_bg_image",
+      "label": "Background image"
+    },
+    {
+      "type": "color",
+      "id": "mood_1_bg_color",
+      "label": "Background color",
+      "default": "#8B7355"
+    },
+    {
+      "type": "image_picker",
+      "id": "mood_1_glass_image",
+      "label": "Glass image"
+    },
+    {
+      "type": "header",
+      "content": "Mood 2: Cocktail"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "mood_2_label",
+      "label": "Label",
+      "default": "COCKTAIL"
+    },
+    {
+      "type": "url",
+      "id": "mood_2_link",
+      "label": "Link"
+    },
+    {
+      "type": "image_picker",
+      "id": "mood_2_bg_image",
+      "label": "Background image"
+    },
+    {
+      "type": "color",
+      "id": "mood_2_bg_color",
+      "label": "Background color",
+      "default": "#2C5F6F"
+    },
+    {
+      "type": "image_picker",
+      "id": "mood_2_glass_image",
+      "label": "Glass image"
+    },
+    {
+      "type": "header",
+      "content": "Mood 3: Celebration"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "mood_3_label",
+      "label": "Label",
+      "default": "CELEBRATION"
+    },
+    {
+      "type": "url",
+      "id": "mood_3_link",
+      "label": "Link"
+    },
+    {
+      "type": "image_picker",
+      "id": "mood_3_bg_image",
+      "label": "Background image"
+    },
+    {
+      "type": "color",
+      "id": "mood_3_bg_color",
+      "label": "Background color",
+      "default": "#D4AF37"
+    },
+    {
+      "type": "image_picker",
+      "id": "mood_3_glass_image",
+      "label": "Glass image"
+    },
+    {
+      "type": "header",
+      "content": "Style"
+    },
+    {
+      "type": "color_scheme",
+      "id": "color_scheme",
+      "label": "Color scheme",
+      "default": "scheme-1"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding top",
+      "default": 60
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "min": 0,
+      "max": 100,
+      "step": 4,
+      "unit": "px",
+      "label": "Padding bottom",
+      "default": 60
+    }
+  ],
+  "presets": [
+    {
+      "name": "For the moment"
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,537 @@
+{% doc %}
+  @prompt
+    Create a new Shopify Dawn section called “For the Moment – Dark Premium”.
+    
+    Goal:
+    An emotional mood selector block under the hero for a premium glassware store. Not a product grid. It should feel like a luxury fashion campaign.
+    
+    Layout:
+    - Full-width dark section (#070a12 background).
+    - Two-column layout on desktop (left text, right image).
+    - Centered container with generous whitespace.
+    - On mobile: stacked layout, no overlapping.
+    
+    Left side:
+    - Large serif heading: “For the moment”.
+    - Below it three large uppercase word-buttons stacked vertically:
+      DINNER
+      COCKTAIL
+      CELEBRATION
+    - No underline.
+    - High letter-spacing.
+    - Default state: muted white (opacity 0.5).
+    - Active / hover state: full white + subtle translateX animation.
+    - Small caption below: “Choose a moment”.
+    
+    Right side:
+    - Large glass image.
+    - Subtle glow effect using radial gradient or drop-shadow.
+    - Smooth fade transition when switching moods.
+    
+    Interaction:
+    - On hover (desktop) or tap (mobile), background and image change smoothly.
+    - Use minimal vanilla JS.
+    - No external libraries.
+    - Accessible buttons (<button>, aria-pressed).
+    - Smooth transitions (300–500ms ease).
+    
+    Theme editor settings:
+    - Heading text (default: For the moment)
+    - 3 mood labels
+    - 3 images (one per mood)
+    - Optional links per mood
+    - Padding top/bottom
+    - Color scheme
+    - Default active mood selector
+    
+    Styling:
+    - Editorial, minimal, dark premium aesthetic.
+    - No borders, no underlines.
+    - Large typography.
+    - Glass should look illuminated.
+    
+    Do not use Tailwind, React, or external scripts. Use standard Dawn structure and Liquid schema.
+{% enddoc %}
+{% assign ai_gen_id = block.id | replace: '_', '' | downcase %}
+
+{% style %}
+  .ai-mood-selector-{{ ai_gen_id }} {
+    display: block;
+    width: 100%;
+    background-color: {{ block.settings.background_color }};
+    padding: {{ block.settings.padding_top }}px 0 {{ block.settings.padding_bottom }}px;
+  }
+
+  .ai-mood-selector-container-{{ ai_gen_id }} {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
+
+  .ai-mood-selector-grid-{{ ai_gen_id }} {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .ai-mood-selector-content-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+  }
+
+  .ai-mood-selector-heading-{{ ai_gen_id }} {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 56px;
+    font-weight: 400;
+    line-height: 1.1;
+    color: {{ block.settings.text_color }};
+    margin: 0;
+    font-style: italic;
+  }
+
+  .ai-mood-selector-buttons-{{ ai_gen_id }} {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .ai-mood-selector-button-{{ ai_gen_id }} {
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: {{ block.settings.type_header_font.family }}, {{ block.settings.type_header_font.fallback_families }};
+    font-size: 48px;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: {{ block.settings.text_color }};
+    opacity: 0.5;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.4s ease;
+    position: relative;
+  }
+
+  .ai-mood-selector-button-{{ ai_gen_id }}:hover,
+  .ai-mood-selector-button-{{ ai_gen_id }}[aria-pressed="true"] {
+    opacity: 1;
+    transform: translateX(8px);
+  }
+
+  .ai-mood-selector-caption-{{ ai_gen_id }} {
+    font-family: {{ block.settings.type_body_font.family }}, {{ block.settings.type_body_font.fallback_families }};
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: {{ block.settings.text_color }};
+    opacity: 0.6;
+  }
+
+  .ai-mood-selector-image-wrapper-{{ ai_gen_id }} {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+  }
+
+  .ai-mood-selector-image-container-{{ ai_gen_id }} {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+
+  .ai-mood-selector-image-container-{{ ai_gen_id }}.active {
+    opacity: 1;
+  }
+
+  .ai-mood-selector-image-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: drop-shadow(0 0 60px rgba(255, 255, 255, 0.15));
+  }
+
+  .ai-mood-selector-placeholder-{{ ai_gen_id }} {
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    filter: drop-shadow(0 0 60px rgba(255, 255, 255, 0.15));
+  }
+
+  .ai-mood-selector-placeholder-{{ ai_gen_id }} svg {
+    width: 100%;
+    height: 100%;
+    opacity: 0.3;
+  }
+
+  @media screen and (max-width: 989px) {
+    .ai-mood-selector-grid-{{ ai_gen_id }} {
+      grid-template-columns: 1fr;
+      gap: 48px;
+    }
+
+    .ai-mood-selector-heading-{{ ai_gen_id }} {
+      font-size: 42px;
+    }
+
+    .ai-mood-selector-button-{{ ai_gen_id }} {
+      font-size: 36px;
+    }
+
+    .ai-mood-selector-content-{{ ai_gen_id }} {
+      gap: 32px;
+    }
+
+    .ai-mood-selector-buttons-{{ ai_gen_id }} {
+      gap: 16px;
+    }
+  }
+
+  @media screen and (max-width: 749px) {
+    .ai-mood-selector-container-{{ ai_gen_id }} {
+      padding: 0 20px;
+    }
+
+    .ai-mood-selector-heading-{{ ai_gen_id }} {
+      font-size: 32px;
+    }
+
+    .ai-mood-selector-button-{{ ai_gen_id }} {
+      font-size: 28px;
+    }
+
+    .ai-mood-selector-image-wrapper-{{ ai_gen_id }} {
+      aspect-ratio: 4 / 5;
+    }
+  }
+{% endstyle %}
+
+<mood-selector-{{ ai_gen_id }} class="ai-mood-selector-{{ ai_gen_id }}" {{ block.shopify_attributes }}>
+  <div class="ai-mood-selector-container-{{ ai_gen_id }}">
+    <div class="ai-mood-selector-grid-{{ ai_gen_id }}">
+      <div class="ai-mood-selector-content-{{ ai_gen_id }}">
+        {% if block.settings.heading != blank %}
+          <h2 class="ai-mood-selector-heading-{{ ai_gen_id }}">{{ block.settings.heading }}</h2>
+        {% endif %}
+
+        <div class="ai-mood-selector-buttons-{{ ai_gen_id }}">
+          {% if block.settings.mood_1_label != blank %}
+            <button
+              class="ai-mood-selector-button-{{ ai_gen_id }}"
+              data-mood="1"
+              aria-pressed="{% if block.settings.default_mood == '1' %}true{% else %}false{% endif %}"
+              {% if block.settings.mood_1_link != blank %}
+                data-link="{{ block.settings.mood_1_link }}"
+              {% endif %}
+            >
+              {{ block.settings.mood_1_label }}
+            </button>
+          {% endif %}
+
+          {% if block.settings.mood_2_label != blank %}
+            <button
+              class="ai-mood-selector-button-{{ ai_gen_id }}"
+              data-mood="2"
+              aria-pressed="{% if block.settings.default_mood == '2' %}true{% else %}false{% endif %}"
+              {% if block.settings.mood_2_link != blank %}
+                data-link="{{ block.settings.mood_2_link }}"
+              {% endif %}
+            >
+              {{ block.settings.mood_2_label }}
+            </button>
+          {% endif %}
+
+          {% if block.settings.mood_3_label != blank %}
+            <button
+              class="ai-mood-selector-button-{{ ai_gen_id }}"
+              data-mood="3"
+              aria-pressed="{% if block.settings.default_mood == '3' %}true{% else %}false{% endif %}"
+              {% if block.settings.mood_3_link != blank %}
+                data-link="{{ block.settings.mood_3_link }}"
+              {% endif %}
+            >
+              {{ block.settings.mood_3_label }}
+            </button>
+          {% endif %}
+        </div>
+
+        {% if block.settings.caption != blank %}
+          <p class="ai-mood-selector-caption-{{ ai_gen_id }}">{{ block.settings.caption }}</p>
+        {% endif %}
+      </div>
+
+      <div class="ai-mood-selector-image-wrapper-{{ ai_gen_id }}">
+        <div
+          class="ai-mood-selector-image-container-{{ ai_gen_id }} {% if block.settings.default_mood == '1' %}active{% endif %}"
+          data-mood-image="1"
+        >
+          {% if block.settings.mood_1_image %}
+            <img
+              src="{{ block.settings.mood_1_image | image_url: width: 1200 }}"
+              alt="{{ block.settings.mood_1_label | escape }}"
+              loading="lazy"
+              width="{{ block.settings.mood_1_image.width }}"
+              height="{{ block.settings.mood_1_image.height }}"
+              class="ai-mood-selector-image-{{ ai_gen_id }}"
+            >
+          {% else %}
+            <div class="ai-mood-selector-placeholder-{{ ai_gen_id }}">
+              {{ 'image' | placeholder_svg_tag }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div
+          class="ai-mood-selector-image-container-{{ ai_gen_id }} {% if block.settings.default_mood == '2' %}active{% endif %}"
+          data-mood-image="2"
+        >
+          {% if block.settings.mood_2_image %}
+            <img
+              src="{{ block.settings.mood_2_image | image_url: width: 1200 }}"
+              alt="{{ block.settings.mood_2_label | escape }}"
+              loading="lazy"
+              width="{{ block.settings.mood_2_image.width }}"
+              height="{{ block.settings.mood_2_image.height }}"
+              class="ai-mood-selector-image-{{ ai_gen_id }}"
+            >
+          {% else %}
+            <div class="ai-mood-selector-placeholder-{{ ai_gen_id }}">
+              {{ 'image' | placeholder_svg_tag }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div
+          class="ai-mood-selector-image-container-{{ ai_gen_id }} {% if block.settings.default_mood == '3' %}active{% endif %}"
+          data-mood-image="3"
+        >
+          {% if block.settings.mood_3_image %}
+            <img
+              src="{{ block.settings.mood_3_image | image_url: width: 1200 }}"
+              alt="{{ block.settings.mood_3_label | escape }}"
+              loading="lazy"
+              width="{{ block.settings.mood_3_image.width }}"
+              height="{{ block.settings.mood_3_image.height }}"
+              class="ai-mood-selector-image-{{ ai_gen_id }}"
+            >
+          {% else %}
+            <div class="ai-mood-selector-placeholder-{{ ai_gen_id }}">
+              {{ 'image' | placeholder_svg_tag }}
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</mood-selector-{{ ai_gen_id }}>
+
+<script>
+  (function() {
+    class MoodSelector{{ ai_gen_id }} extends HTMLElement {
+      constructor() {
+        super();
+      }
+
+      connectedCallback() {
+        this.buttons = this.querySelectorAll('.ai-mood-selector-button-{{ ai_gen_id }}');
+        this.images = this.querySelectorAll('.ai-mood-selector-image-container-{{ ai_gen_id }}');
+        this.setupEventListeners();
+      }
+
+      setupEventListeners() {
+        this.buttons.forEach((button) => {
+          button.addEventListener('click', (e) => {
+            const mood = button.getAttribute('data-mood');
+            const link = button.getAttribute('data-link');
+
+            if (link) {
+              window.location.href = link;
+            } else {
+              this.switchMood(mood);
+            }
+          });
+        });
+      }
+
+      switchMood(mood) {
+        this.buttons.forEach((btn) => {
+          const btnMood = btn.getAttribute('data-mood');
+          if (btnMood === mood) {
+            btn.setAttribute('aria-pressed', 'true');
+          } else {
+            btn.setAttribute('aria-pressed', 'false');
+          }
+        });
+
+        this.images.forEach((img) => {
+          const imgMood = img.getAttribute('data-mood-image');
+          if (imgMood === mood) {
+            img.classList.add('active');
+          } else {
+            img.classList.remove('active');
+          }
+        });
+      }
+    }
+
+    customElements.define('mood-selector-{{ ai_gen_id }}', MoodSelector{{ ai_gen_id }});
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Mood selector premium",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Content"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "heading",
+      "label": "Heading",
+      "default": "For the moment"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "caption",
+      "label": "Caption",
+      "default": "Choose a moment"
+    },
+    {
+      "type": "header",
+      "content": "Mood 1"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "mood_1_label",
+      "label": "Label",
+      "default": "DINNER"
+    },
+    {
+      "type": "image_picker",
+      "id": "mood_1_image",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "mood_1_link",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Mood 2"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "mood_2_label",
+      "label": "Label",
+      "default": "COCKTAIL"
+    },
+    {
+      "type": "image_picker",
+      "id": "mood_2_image",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "mood_2_link",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Mood 3"
+    },
+    {
+      "type": "inline_richtext",
+      "id": "mood_3_label",
+      "label": "Label",
+      "default": "CELEBRATION"
+    },
+    {
+      "type": "image_picker",
+      "id": "mood_3_image",
+      "label": "Image"
+    },
+    {
+      "type": "url",
+      "id": "mood_3_link",
+      "label": "Link"
+    },
+    {
+      "type": "header",
+      "content": "Settings"
+    },
+    {
+      "type": "select",
+      "id": "default_mood",
+      "label": "Default active mood",
+      "options": [
+        {
+          "value": "1",
+          "label": "Mood 1"
+        },
+        {
+          "value": "2",
+          "label": "Mood 2"
+        },
+        {
+          "value": "3",
+          "label": "Mood 3"
+        }
+      ],
+      "default": "1"
+    },
+    {
+      "type": "range",
+      "id": "padding_top",
+      "label": "Padding top",
+      "min": 0,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "default": 80
+    },
+    {
+      "type": "range",
+      "id": "padding_bottom",
+      "label": "Padding bottom",
+      "min": 0,
+      "max": 200,
+      "step": 10,
+      "unit": "px",
+      "default": 80
+    },
+    {
+      "type": "header",
+      "content": "Colors"
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background",
+      "default": "#070a12"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text",
+      "default": "#ffffff"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Mood selector premium"
+    }
+  ],
+  "tag": null
+}
+{% endschema %}
